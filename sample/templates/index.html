@@ -1,0 +1,80 @@
+                                                                                                                                           
+<!-- index.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>To-Do App</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">To-Do App</h1>
+        <div class="input-group mb-3">
+            <input type="text" id="task-input" class="form-control" placeholder="Enter a task">
+            <div class="input-group-append">
+                <button id="add-task" class="btn btn-primary">Add Task</button>
+            </div>
+        </div>
+        <ul id="task-list" class="list-group">
+        </ul>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+
+            $('#add-task').click(function() {
+                var taskText = $('#task-input').val();
+                if (taskText) {
+                    $.ajax({
+                        type: 'POST',
+                        url: '/add_task',
+                        data: {task: taskText},
+                        success: function(response) {
+                            $('#task-input').val('');
+                            var taskItem = '<li class="list-group-item d-flex justify-content-between align-items-center" data-task-id="' + response.task_id + '">' + response.task + '<button class="btn btn-danger btn-sm delete-task">Delete</button></li>';
+                            $('#task-list').append(taskItem);
+                        }
+                    });
+                }
+            });
+
+
+            $(document).on('click', '.delete-task', function() {
+                var taskItem = $(this).parent();
+                var taskText = taskItem.text().replace('Delete', '').trim();
+                if (confirm("Are you sure you want to delete the task: '" + taskText + "'?")) {
+                    var taskId = taskItem.data('task-id');
+                    $.ajax({
+                        type: 'POST',
+                        url: '/delete_task',
+                        data: {task_id: taskId},
+                        success: function(response) {
+                            getTasks();
+                        }
+                    });
+                }
+            });
+
+
+            function getTasks() {
+                $.ajax({
+                    type: 'GET',
+                    url: '/get_tasks',
+                    success: function(tasks) {
+                        $('#task-list').empty();
+                        for (var taskId in tasks) {
+                            var taskItem = '<li class="list-group-item d-flex justify-content-between align-items-center" data-task-id="' + taskId + '">' + tasks[taskId] + '<button class="btn btn-danger btn-sm delete-task">Delete</button></li>';
+                            $('#task-list').append(taskItem);
+                        }
+                    }
+                });
+            }
+
+            // Load tasks on page load
+            getTasks();
+        });
+    </script>
+</body>
+</html>
